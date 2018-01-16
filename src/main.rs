@@ -1,3 +1,102 @@
+extern crate regex;
+extern crate clap;
+extern crate walkdir;
+extern crate ansi_term;
+
+use std::env;
+use clap::{App, Arg, SubCommand};
+use walkdir::{DirEntry, WalkDir};
+use std::io::ErrorKind;
+use std::process;
+
+
+fn is_git_dir(entry: &DirEntry) -> bool {
+    println!("Entry: {}", entry.file_name().to_str().unwrap());
+    entry.file_name().to_str().unwrap_or("") == ".git"
+}
+
+fn handle_error(e: walkdir::Error) -> bool {
+    if let Some(path) = e.path() {
+        if path.is_file() { return true }
+    }
+
+    if let Some(err) = e.io_error() {
+        if err.kind() == ErrorKind::NotFound {
+            return true
+        }
+    }
+
+    println!("ERROR: {}", e);
+    return false
+}
+
+fn find_projects<T>(code_dir: String, cb: T) where T: Fn(String) -> ()
+          -> Vec<String> {
+    let mut projects: Vec<String> = Vec::new();
+    let wkd = WalkDir::new(code_dir);
+    let git_dirs = wkd.into_iter();
+
+    for dir in git_dirs {
+        let cwd;
+        match dir {
+            Ok(d) => cwd = d,
+            Err(e) => {
+                if handle_error(e) {
+                    continue
+                } else {
+                    process::exit(1);
+                }
+            },
+        };
+
+        if !cwd.file_type().is_dir() { continue }
+
+        let file_name = cwd.file_name().to_str().unwrap_or("");
+        if file_name == ".git" {
+            let parent_path = cwd
+                .path()
+                .parent()
+                .unwrap()
+                .to_str()
+                .unwrap_or("")
+                .to_string();
+
+            if let Some(func) = callback {
+                callback(parent_path);
+            }
+
+            projects.push(parent_path);
+        }
+    }
+
+    projects
+}
+
+fn list(code_dir: String) {
+    let projects = find_projects(code_dir);
+    for p in projects {
+        println!("{}", p);
+    }
+}
+
 fn main() {
-    println!("Hello, world!");
+    let matches = App::new("projector")
+        .version("0.1.0")
+        .author("Mathew Robinson <chasinglogic@gmail.com>")
+        .arg(Arg::with_name("code-dir")
+             .help("The root of where to search for projects."))
+        .subcommand(SubCommand::with_name("list"))
+        .get_matches();
+
+    let code_dir: String = if let Some(dir) = matches.value_of("code-dir") {
+        dir.to_string()
+    } else if let Ok(dir) = env::var("CODE_DIR") {
+        dir
+    } else {
+        "~/Code".to_string()
+    };
+
+    if let Some(_) = matches.subcommand_matches("list") {
+        list(code_dir);
+    }
 }
