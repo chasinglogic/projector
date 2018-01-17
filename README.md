@@ -7,6 +7,22 @@ beloved projectile tool in Emacs. This CLI can be viewed as a "no setup"
 required version of [mr (myrepos)](https://myrepos.branchable.com/). But a bit
 more flexible than that.
 
+## Installation
+
+You can install projector from crates.io via cargo:
+
+```
+cargo install projector
+```
+
+Or you can build it locally with:
+
+```
+git clone https://github.com/chasinglogic/projector $PATH_TO_PROJECTOR
+cd $PATH_TO_PROJECTOR
+cargon install --path .
+```
+
 ## Usage
 
 ```
