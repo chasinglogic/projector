@@ -8,7 +8,7 @@ repository = "https://github.com/chasinglogic/projector"
 readme = "README.md"
 keywords = ["cli", "search", "files", "utility"]
 categories = ["command-line-interface", "command-line-utilities", "filesystem"]
-license = "Apache-2.0"
+license = "GPL-3.0-or-later"
 
 [dependencies]
 regex = "0.2.1"
