@@ -4,16 +4,12 @@ extern crate walkdir;
 extern crate ansi_term;
 
 use std::env;
-use clap::{App, Arg, SubCommand};
+use clap::{App, Arg, SubCommand, AppSettings};
 use walkdir::{DirEntry, WalkDir};
 use std::io::ErrorKind;
 use std::process;
+use std::process::Command;
 
-
-fn is_git_dir(entry: &DirEntry) -> bool {
-    println!("Entry: {}", entry.file_name().to_str().unwrap());
-    entry.file_name().to_str().unwrap_or("") == ".git"
-}
 
 fn handle_error(e: walkdir::Error) -> bool {
     if let Some(path) = e.path() {
@@ -30,9 +26,7 @@ fn handle_error(e: walkdir::Error) -> bool {
     return false
 }
 
-fn find_projects<T>(code_dir: String, cb: T) where T: Fn(String) -> ()
-          -> Vec<String> {
-    let mut projects: Vec<String> = Vec::new();
+fn find_projects<F>(code_dir: String, callback: F) where F: (Fn(String) -> ()) {
     let wkd = WalkDir::new(code_dir);
     let git_dirs = wkd.into_iter();
 
@@ -61,22 +55,29 @@ fn find_projects<T>(code_dir: String, cb: T) where T: Fn(String) -> ()
                 .unwrap_or("")
                 .to_string();
 
-            if let Some(func) = callback {
-                callback(parent_path);
-            }
-
-            projects.push(parent_path);
+            callback(parent_path);
         }
     }
+}
 
-    projects
+fn run(code_dir: String, command: Vec<String>) {
+    if let Some((program, arguments)) = command.split_first() {
+        find_projects(code_dir, |p| {
+            let mut child = Command::new(program)
+                .args(arguments)
+                .current_dir(p)
+                .spawn()
+                .expect("failed to start process");
+            child.wait().expect("failed to execute child process");
+            ()
+        })
+    } else if command.len() == 0 {
+        println!("ERROR: No command given");
+    }
 }
 
 fn list(code_dir: String) {
-    let projects = find_projects(code_dir);
-    for p in projects {
-        println!("{}", p);
-    }
+    find_projects(code_dir, |p| println!("{}", p))
 }
 
 fn main() {
@@ -86,6 +87,11 @@ fn main() {
         .arg(Arg::with_name("code-dir")
              .help("The root of where to search for projects."))
         .subcommand(SubCommand::with_name("list"))
+        .subcommand(SubCommand::with_name("run")
+                    .setting(AppSettings::TrailingVarArg)
+                    .arg(Arg::with_name("ARGV")
+                         .multiple(true)
+                         .default_value("")))
         .get_matches();
 
     let code_dir: String = if let Some(dir) = matches.value_of("code-dir") {
@@ -98,5 +104,11 @@ fn main() {
 
     if let Some(_) = matches.subcommand_matches("list") {
         list(code_dir);
+    } else if let Some(args) = matches.subcommand_matches("run") {
+        let argv: Vec<&str> = args.values_of("ARGV").unwrap().collect();
+        let cmd: Vec<String> = argv.iter().map(|x| x.to_string()).collect();
+        run(code_dir, cmd);
+    } else {
+        println!("ERROR: Unknown command.");
     }
 }
