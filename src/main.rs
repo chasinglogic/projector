@@ -1,3 +1,7 @@
+// Copyright 2018 Mathew Robinson <chasinglogic@gmail.com>. All rights reserved.
+// Use of this source code is governed by the GPLv3 license that can be found in
+// the LICENSE file.
+
 extern crate regex;
 extern crate clap;
 extern crate walkdir;
@@ -5,7 +9,7 @@ extern crate ansi_term;
 
 use std::env;
 use clap::{App, Arg, SubCommand, AppSettings};
-use walkdir::{DirEntry, WalkDir};
+use walkdir::WalkDir;
 use std::io::ErrorKind;
 use std::process;
 use std::process::Command;
@@ -85,7 +89,13 @@ fn main() {
         .version("0.1.0")
         .author("Mathew Robinson <chasinglogic@gmail.com>")
         .arg(Arg::with_name("code-dir")
-             .help("The root of where to search for projects."))
+             .short("c")
+             .long("code-dir")
+             .value_name("CODE_DIR")
+             .takes_value(true)
+             .help("The root of where to search for projects. Also can be
+configured using the environment variable CODE_DIR.
+Default: ~/Code"))
         .subcommand(SubCommand::with_name("list"))
         .subcommand(SubCommand::with_name("run")
                     .setting(AppSettings::TrailingVarArg)
