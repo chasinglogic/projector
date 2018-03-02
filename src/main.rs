@@ -8,12 +8,21 @@ extern crate walkdir;
 extern crate ansi_term;
 
 use std::env;
-use clap::{App, Arg, SubCommand, AppSettings};
-use walkdir::WalkDir;
-use std::io::ErrorKind;
 use std::process;
 use std::process::Command;
 
+use std::path::Path;
+
+use std::fs::File;
+use std::fs::OpenOptions;
+use std::io::ErrorKind;
+use std::io::prelude::*;
+
+use std::sync::{Arc, Mutex};
+
+use clap::{App, Arg, SubCommand, AppSettings};
+
+use walkdir::WalkDir;
 
 fn handle_error(e: walkdir::Error) -> bool {
     if let Some(path) = e.path() {
@@ -80,8 +89,43 @@ fn run(code_dir: String, command: Vec<String>) {
     }
 }
 
-fn list(code_dir: String) {
-    find_projects(code_dir, |p| println!("{}", p))
+fn list_from_cache(cache_file: &Path) {
+    let mut f = File::open(&cache_file).expect("Cache file not found");
+    let mut contents = String::new();
+    f.read_to_string(&mut contents).expect("Unable to read from cache file.");
+    println!("{}", contents)
+}
+
+fn list(code_dir: String, ignore_cache: bool) {
+    let mut home = env::var("HOME").unwrap_or("".to_string());
+    home.push_str("/.projector_cache");
+    let cache_file = Path::new(&home);
+
+    if cache_file.exists() && !ignore_cache {
+        list_from_cache(&cache_file);
+        return
+    }
+
+    let projects = Arc::new(Mutex::new(Vec::new()));
+
+    find_projects(code_dir, |p| {
+        println!("{}", p);
+        projects.lock().unwrap().push(p.clone())
+    });
+
+    let results = projects.lock().unwrap().join("\n");
+
+    let mut f = OpenOptions::new()
+        .create(true)
+        .write(true)
+        .open(&cache_file)
+        .expect("Unable to open cache file");
+    match f.write_all(&results.into_bytes()) {
+        Ok(_) => {},
+        Err(e) => {
+            println!("ERROR: Unable to write cache file {}", e)
+        }
+    }
 }
 
 fn main() {
@@ -96,7 +140,14 @@ fn main() {
              .help("The root of where to search for projects. Also can be
 configured using the environment variable CODE_DIR.
 Default: ~/Code"))
-        .subcommand(SubCommand::with_name("list"))
+        .subcommand(
+            SubCommand::with_name("list")
+            .arg(Arg::with_name("no-cache")
+                 .short("n")
+                 .long("no-cache"))
+            .arg(Arg::with_name("refresh-cache")
+                 .short("r")
+                 .long("refresh-cache")))
         .subcommand(SubCommand::with_name("run")
                     .setting(AppSettings::TrailingVarArg)
                     .arg(Arg::with_name("ARGV")
@@ -112,8 +163,10 @@ Default: ~/Code"))
         "~/Code".to_string()
     };
 
-    if let Some(_) = matches.subcommand_matches("list") {
-        list(code_dir);
+    if let Some(args) = matches.subcommand_matches("list") {
+        list(code_dir, 
+             args.is_present("no-cache") ||
+             args.is_present("refresh-cache"));
     } else if let Some(args) = matches.subcommand_matches("run") {
         let argv: Vec<&str> = args.values_of("ARGV").unwrap().collect();
         let cmd: Vec<String> = argv.iter().map(|x| x.to_string()).collect();
