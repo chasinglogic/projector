@@ -18,8 +18,6 @@ use std::time::Duration;
 use std::io::ErrorKind;
 use std::io::prelude::*;
 
-use std::sync::{Arc, Mutex};
-
 use clap::{App, AppSettings, Arg, SubCommand};
 
 use walkdir::WalkDir;
