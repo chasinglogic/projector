@@ -1,6 +1,6 @@
 [package]
 name = "projector"
-version = "0.1.1"
+version = "0.1.2"
 authors = ["Mathew Robinson <chasinglogic@gmail.com>"]
 description = "Project management CLI"
 homepage = "https://github.com/chasinglogic/projector"
