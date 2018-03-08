@@ -181,7 +181,7 @@ fn list(code_dir: String, ignore_cache: bool) {
 
 fn main() {
     let matches = App::new("projector")
-        .version("0.1.2")
+        .version("0.1.3")
         .author("Mathew Robinson <chasinglogic@gmail.com>")
         .arg(
             Arg::with_name("code-dir")
