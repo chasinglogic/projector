@@ -116,6 +116,7 @@ fn list_from_fs(code_dir: String, cache_file: &Path) {
     let mut f = OpenOptions::new()
         .create(true)
         .write(true)
+        .truncate(true)
         .open(cache_file)
         .expect("Unable to open cache file");
 
