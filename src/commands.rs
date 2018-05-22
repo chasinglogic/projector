@@ -1,7 +1,8 @@
+use projects;
 use projects::find_projects;
 use std::process::Command;
 
-pub fn run(code_dir: String, ignore_cache: bool, command: Vec<String>) {
+pub fn run(config: projects::Config, command: Vec<String>) {
     if let Some((program, arguments)) = command.split_first() {
         find_projects(code_dir, ignore_cache, |p| {
             println!("\n{}", "=".repeat(80));
@@ -23,8 +24,8 @@ pub fn run(code_dir: String, ignore_cache: bool, command: Vec<String>) {
     }
 }
 
-pub fn list(code_dir: String, ignore_cache: bool) {
-    find_projects(code_dir, ignore_cache, |p| {
+pub fn list(config: projects::Config) {
+    find_projects(config, |p| {
         println!("{}", p);
     });
 }

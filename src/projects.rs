@@ -9,7 +9,14 @@ use std::time::Duration;
 use walkdir;
 use walkdir::WalkDir;
 
-fn handle_error(e: walkdir::Error) -> bool {
+struct Config {
+    ignore_cache: bool,
+    code_dir: String,
+    cache_file: PathBuf,
+    ignore_patterns: Vec<String>,
+}
+
+fn ignore_error(e: walkdir::Error) -> bool {
     if let Some(path) = e.path() {
         if path.is_file() {
             return true;
@@ -50,20 +57,16 @@ fn should_use_cache(cache_file: &Path) -> bool {
     }
 }
 
-pub fn find_projects<F>(code_dir: String, ignore_cache: bool, callback: F)
+pub fn find_projects<F>(config: Config, callback: F)
 where
     F: Fn(&str) -> (),
 {
-    let mut home = env::var("HOME").unwrap_or("".to_string());
-    home.push_str("/.projector_cache");
-    let cache_file = Path::new(&home);
-
-    let use_cache = !ignore_cache && should_use_cache(&cache_file);
+    let use_cache = !config.ignore_cache && should_use_cache(&config.cache_file);
 
     if use_cache {
-        find_projects_from_cache(&cache_file, callback);
+        find_projects_from_cache(config, callback);
     } else {
-        find_projects_from_fs(code_dir, &cache_file, callback);
+        find_projects_from_fs(config, &cache_file, callback);
     }
 }
 
@@ -81,20 +84,21 @@ where
     }
 }
 
-fn find_projects_from_fs<F>(code_dir: String, cache_file: &Path, callback: F)
+fn find_projects_from_fs<F>(config: Config, callback: F)
 where
     F: Fn(&str) -> (),
 {
-    let wkd = WalkDir::new(code_dir);
-    let git_dirs = wkd.into_iter();
+    let wkd = WalkDir::new(config.code_dir);
+    let code_dirs = wkd.into_iter();
+    // Holds the projects we find
     let mut projects = Vec::new();
 
-    for dir in git_dirs {
+    for dir in code_dirs {
         let cwd;
         match dir {
             Ok(d) => cwd = d,
             Err(e) => {
-                if handle_error(e) {
+                if ignore_error(e) {
                     continue;
                 } else {
                     process::exit(1);
@@ -115,15 +119,14 @@ where
         }
     }
 
-    let results = projects.join("\n");
-
     let mut f = OpenOptions::new()
         .create(true)
         .write(true)
         .truncate(true)
-        .open(cache_file)
+        .open(&config.cache_file)
         .expect("Unable to open cache file");
 
+    let results = projects.join("\n");
     match f.write_all(&results.into_bytes()) {
         Ok(_) => {}
         Err(e) => println!("ERROR: Unable to write cache file {}", e),
