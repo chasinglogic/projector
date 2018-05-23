@@ -1,19 +1,46 @@
-use std::env;
 use std::fs::{metadata, File, OpenOptions};
 use std::io::prelude::*;
 use std::io::ErrorKind;
 use std::path::Path;
+use std::path::PathBuf;
 use std::process;
 use std::time::Duration;
 
 use walkdir;
 use walkdir::WalkDir;
 
-struct Config {
-    ignore_cache: bool,
-    code_dir: String,
-    cache_file: PathBuf,
-    ignore_patterns: Vec<String>,
+#[derive(Serialize, Deserialize)]
+pub struct Config {
+    pub ignore_cache: bool,
+    pub code_dir: String,
+    pub cache_file: PathBuf,
+    pub ignore_patterns: Vec<String>,
+}
+
+impl Config {
+    pub fn new(code_dir: String) -> Config {
+        Config {
+            code_dir: code_dir,
+            ignore_cache: false,
+            cache_file: PathBuf::from(".projector_cache"),
+            ignore_patterns: Vec::new(),
+        }
+    }
+
+    pub fn ignore_cache(self) -> Config {
+        self.ignore_cache = true;
+        self
+    }
+
+    pub fn ignore_patterns(self, patterns: Vec<String>) -> Config {
+        self.ignore_patterns = patterns.clone();
+        self
+    }
+
+    pub fn cache_file(self, cache_file: PathBuf) -> Config {
+        self.cache_file = cache_file;
+        self
+    }
 }
 
 fn ignore_error(e: walkdir::Error) -> bool {
@@ -29,7 +56,6 @@ fn ignore_error(e: walkdir::Error) -> bool {
         }
     }
 
-    println!("ERROR: {}", e);
     return false;
 }
 
@@ -66,15 +92,15 @@ where
     if use_cache {
         find_projects_from_cache(config, callback);
     } else {
-        find_projects_from_fs(config, &cache_file, callback);
+        find_projects_from_fs(config, callback);
     }
 }
 
-fn find_projects_from_cache<F>(cache_file: &Path, callback: F)
+fn find_projects_from_cache<F>(config: Config, callback: F)
 where
     F: Fn(&str) -> (),
 {
-    let mut f = File::open(cache_file).expect("Cache file not found");
+    let mut f = File::open(&config.cache_file).expect("Cache file not found");
     let mut contents = String::new();
     f.read_to_string(&mut contents)
         .expect("Unable to read from cache file.");
@@ -101,6 +127,7 @@ where
                 if ignore_error(e) {
                     continue;
                 } else {
+                    println!("Unkown Error: {}", e);
                     process::exit(1);
                 }
             }

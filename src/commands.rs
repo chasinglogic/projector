@@ -4,7 +4,7 @@ use std::process::Command;
 
 pub fn run(config: projects::Config, command: Vec<String>) {
     if let Some((program, arguments)) = command.split_first() {
-        find_projects(code_dir, ignore_cache, |p| {
+        find_projects(config, |p| {
             println!("\n{}", "=".repeat(80));
             println!("Running in: {}", p);
             println!("{}\n", "=".repeat(80));
