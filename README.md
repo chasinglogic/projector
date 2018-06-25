@@ -2,10 +2,10 @@
 
 I work on a lot of FOSS projects, it's literally part of my job. Unfortunately
 this means that moving around my project directories (especially my GOPATH) can
-get insanely burdensome. So I wrote this CLI to basically emulate my much
-beloved projectile tool in Emacs. This CLI can be viewed as a "no setup"
-required version of [mr (myrepos)](https://myrepos.branchable.com/). But a bit
-more flexible than that.
+get insanely burdensome. So I wrote this CLI to help me find and manage my
+enormous git repos folder. Projector can be viewed as a "no setup" required
+version of [mr (myrepos)](https://myrepos.branchable.com/). But a bit more
+flexible than that.
 
 ## Installation
 
@@ -26,7 +26,7 @@ cargon install --path .
 ## Usage
 
 ```
-projector 0.1.0
+projector 0.2.0
 Mathew Robinson <chasinglogic@gmail.com>
 
 USAGE:
@@ -40,6 +40,10 @@ OPTIONS:
     -c, --code-dir <CODE_DIR>    The root of where to search for projects. Also can be
                                  configured using the environment variable CODE_DIR.
                                  Default: ~/Code
+    -e, --exclude <PATTERN>      A regex which will be used to exclude directories from commands.
+    -i, --include <PATTERN>      A regex which will be used to include directories from commands. Overrides
+                                 excludes so if a directory is matched by an exclude pattern and an include
+                                 pattern the directory will be included.
 
 SUBCOMMANDS:
     help    Prints this message or the help of the given subcommand(s)
@@ -206,6 +210,78 @@ Code/projector master λ
 
 Any flags you pass after the program will get passed to the program so you can
 type the command just like you would normally, no weird shell quoting!
+
+
+### Some Setup (Optionally) Required
+
+Projector does not require any setup to use provided that you either have your
+code in `~/Code` or set the `$CODE_DIR` environment variable. However every
+good CLI does provide some configuration for power users, so of course
+projector does as well. Primarily the configuration centers around inclusion
+and exclusion of project directories. For example I have a huge amount of go
+repos in my `$GOPATH`:
+
+```
+/Users/mathewrobinson/Code/go/src/github.com/goreleaser/nfpm
+/Users/mathewrobinson/Code/go/src/github.com/goreleaser/archive
+/Users/mathewrobinson/Code/go/src/github.com/goreleaser/goreleaser
+/Users/mathewrobinson/Code/go/src/github.com/dominikh/go-tools
+/Users/mathewrobinson/Code/go/src/github.com/ramya-rao-a/go-outline
+/Users/mathewrobinson/Code/go/src/github.com/fatih/gomodifytags
+/Users/mathewrobinson/Code/go/src/github.com/fatih/color
+/Users/mathewrobinson/Code/go/src/github.com/fatih/motion
+/Users/mathewrobinson/Code/go/src/github.com/evergreen-ci/evergreen
+/Users/mathewrobinson/Code/go/src/github.com/derekparker/delve
+/Users/mathewrobinson/Code/go/src/github.com/mdempsky/unconvert
+/Users/mathewrobinson/Code/go/src/github.com/jstemmer/gotags
+/Users/mathewrobinson/Code/go/src/github.com/josharian/impl
+/Users/mathewrobinson/Code/go/src/github.com/MichaelTJones/walk
+/Users/mathewrobinson/Code/go/src/github.com/mattn/go-isatty
+/Users/mathewrobinson/Code/go/src/github.com/mattn/go-zglob
+/Users/mathewrobinson/Code/go/src/github.com/mattn/go-colorable
+/Users/mathewrobinson/Code/go/src/github.com/uudashr/gopkgs
+/Users/mathewrobinson/Code/go/src/github.com/chasinglogic/licensure
+... (list truncated for brevity)
+```
+
+Of which most are not mine so I don't want them to show up in my projector
+output or be used when I run `projector run`. I could use the `--exclude`
+flag which supports a regular expression as accepted by the
+[regex](https://docs.rs/regex/1.0.1/regex/#syntax) crate to exclude the
+go directories. Something like:
+
+```
+projector --exclude '.*go.*' list
+```
+
+But that would also exclude my go source directories. Using the `--include`
+flag I can add a regex which will include a directory if it matches the include
+regex and the exclude regex. This feature exists because the regex crate
+does not support look-ahead/behind. So the new command is:
+
+```
+projector --exclude '.*go.*' --include '.*github.com/chasinglogic.*' list
+```
+
+This is a pretty tiresome command to type every time so you can make an alias, or
+create a config file at `~/.projector.yml` that looks like this:
+
+```yaml
+---
+code_dir: ~/Code
+includes:
+    - .*github.com/chasinglogic.*
+    - .*github.com/mongodb.*
+excludes:
+    - .*go.*
+```
+
+This does the same thing. In this config file includes and excludes are lists
+of regexes which will be or'd together. Anything that matches an exclude
+pattern will be excluded unless it also matches an include pattern.
+
+code\_dir is required inside of the config file.
+
 
 
 ## License
