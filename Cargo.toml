@@ -6,7 +6,7 @@ description = "Project management CLI"
 homepage = "https://github.com/chasinglogic/projector"
 repository = "https://github.com/chasinglogic/projector"
 readme = "README.md"
-keywords = ["cli", "search", "files", "utility", "project", "projects"]
+keywords = ["cli", "search", "files", "utility", "project"]
 categories = ["command-line-interface", "command-line-utilities", "filesystem"]
 license = "GPL-3.0"
 
