@@ -1,12 +1,12 @@
 [package]
 name = "projector"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Mathew Robinson <chasinglogic@gmail.com>"]
 description = "Project management CLI"
 homepage = "https://github.com/chasinglogic/projector"
 repository = "https://github.com/chasinglogic/projector"
 readme = "README.md"
-keywords = ["cli", "search", "files", "utility"]
+keywords = ["cli", "search", "files", "utility", "project", "projects"]
 categories = ["command-line-interface", "command-line-utilities", "filesystem"]
 license = "GPL-3.0"
 
@@ -15,3 +15,7 @@ regex = "0.2.1"
 walkdir = "2"
 clap = "2.29.2"
 ansi_term = "0.9.0"
+serde = "1.0"
+serde_yaml = "0.7"
+serde_derive = "1.0"
+
