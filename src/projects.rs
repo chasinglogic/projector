@@ -23,7 +23,7 @@ pub fn find<F>(code_dir: String, callback: F)
 where
     F: Fn(String) -> (),
 {
-    let mut wkd = WalkDir::new(code_dir).contents_first(false).into_iter();
+    let mut wkd = WalkDir::new(code_dir).into_iter();
     loop {
         let dir = match wkd.next() {
             None => break,
