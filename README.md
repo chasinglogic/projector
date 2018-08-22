@@ -11,37 +11,42 @@ flexible than that.
 
 ### Install from Release
 
-1. Navigate to [the Releases Page](https://github.com/chasinglogic/dfm/releases)
+1. Navigate to [the Releases Page](https://github.com/chasinglogic/projector/releases)
 2. Find the tar ball for your platform / architecture. For example, on 64 bit
-   Mac OSX, the archive is named `dfm_{version}_darwin_amd64.tar.gz`
+   Mac OSX, the archive is named `projector_{version}_darwin_amd64.tar.gz`
 3. Extract the tar ball
-4. Put the dfm binary in your `$PATH`
+4. Put the projector binary in your `$PATH`
 
 ### Install from Source
 
 Simply run go get:
 
 ```bash
-$ go get github.com/chasinglogic/dfm
+$ go get github.com/chasinglogic/projector
 ```
 
-If your `$GOPATH/bin` is in your `$PATH` then you now have dfm installed.
-
-## Updating
-
-`dfm` can update itself to bring in the latest bug fixes and features. Simply
-run:
-
-```bash
-dfm update
-```
-
-To update.
+If your `$GOPATH/bin` is in your `$PATH` then you now have projector installed.
 
 ## Usage
 
 ```
+Find and operate on projects
 
+Usage:
+  projector [command]
+
+Available Commands:
+  help        Help about any command
+  list        List projects on this system
+  run         Run a command in all projects found
+
+Flags:
+  -c, --code-dir string   Where to search for projects. This flag overrides the config file.
+  -e, --exclude strings   A regex used to exclude projects from the search.
+  -h, --help              help for projector
+  -i, --include strings   A regex used to include projects in the search, if a project matches exclude and include it is included.
+
+Use "projector [command] --help" for more information about a command.
 ```
 
 ### Definitions
@@ -74,10 +79,10 @@ instantly be transported to your project directory. For example:
 ```
 Users/chasinglogic λ . .bashrc
 Users/chasinglogic λ sp projector
-Code/projector master λ sp dfm
-chasinglogic/dfm master λ pwd
-/Users/chasinglogic/Code/go/src/github.com/chasinglogic/dfm
-chasinglogic/dfm master λ
+Code/projector master λ sp projector
+chasinglogic/projector master λ pwd
+/Users/chasinglogic/Code/go/src/github.com/chasinglogic/projector
+chasinglogic/projector master λ
 ```
 
 Optionally, if you have another tool I'm fond of called
@@ -107,7 +112,7 @@ Now you get something like this:
   /Users/chasinglogic/Code/go/src/github.com/pkg/errors
   /Users/chasinglogic/Code/go/src/github.com/praelatus/praelatus
   /Users/chasinglogic/Code/go/src/github.com/praelatus/praelatus-poc
-  /Users/chasinglogic/Code/go/src/github.com/chasinglogic/dfm
+  /Users/chasinglogic/Code/go/src/github.com/chasinglogic/projector
   /Users/chasinglogic/Code/go/src/github.com/chasinglogic/fireplace
   /Users/chasinglogic/Code/go/src/github.com/mattn/go-zglob
   /Users/chasinglogic/Code/go/src/github.com/josharian/impl
