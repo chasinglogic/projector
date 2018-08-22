@@ -1,0 +1,14 @@
+hash: 055924fe1009438fc70698e00b95ab67f5f2bf2c42f69098d6eff669485c5ca4
+updated: 2018-08-22T12:21:26.377547559-04:00
+imports:
+- name: github.com/BurntSushi/toml
+  version: b26d9c308763d68093482582cea63d69be07a0f0
+- name: github.com/fatih/color
+  version: 2d684516a8861da43017284349b7e303e809ac21
+- name: github.com/inconshreveable/mousetrap
+  version: 76626ae9c91c4f2a10f34cad8ce83ea42c93bb75
+- name: github.com/spf13/cobra
+  version: ef82de70bb3f60c65fb8eebacbb2d122ef517385
+- name: github.com/spf13/pflag
+  version: 9a97c102cda95a86cec2345a6f09f55a939babf5
+testImports: []

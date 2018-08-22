@@ -1,0 +1,6 @@
+package: github.com/chasinglogic/projector
+import:
+- package: github.com/BurntSushi/toml
+- package: github.com/spf13/cobra
+- package: github.com/spf13/pflag
+- package: github.com/fatih/color
