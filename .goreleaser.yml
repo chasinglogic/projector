@@ -50,4 +50,5 @@ changelog:
     exclude:
       - '^docs:'
       - '^test:'
-      - '*Makefile*'
+      - '^goreleaser:'
+      - '^Makefile'

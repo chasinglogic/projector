@@ -27,7 +27,6 @@ install: package install-artifacts
 install-snapshot: snapshot install-artifacts
 
 install-artifacts:
-	# TODO: Add docs and man pages here once written
 	cp dist/${GOOS}_${GOARCH}/projector /usr/local/bin/
 
 snapshot: clean
