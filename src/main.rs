@@ -3,12 +3,14 @@
 // the LICENSE file.
 
 extern crate clap;
+extern crate dirs;
 extern crate projector;
 extern crate serde_yaml;
+// extern crate rayon;
 
 use clap::{App, AppSettings, Arg, SubCommand};
+use dirs::home_dir;
 use projector::projects::{find, Config};
-use std::env;
 use std::fs::File;
 use std::io::prelude::*;
 use std::path::PathBuf;
@@ -45,22 +47,21 @@ fn main() {
                 .short("c")
                 .long("code-dir")
                 .value_name("CODE_DIR")
+                .multiple(true)
                 .takes_value(true)
                 .help(
                     "The root of where to search for projects. Also can be
 configured using the environment variable CODE_DIR.
 Default: ~/Code",
                 ),
-        )
-        .arg(
+        ).arg(
             Arg::with_name("exclude")
                 .short("e")
                 .long("exclude")
                 .value_name("PATTERN")
                 .takes_value(true)
                 .help("A regex which will be used to exclude directories from commands."),
-        )
-        .arg(
+        ).arg(
             Arg::with_name("include")
                 .short("i")
                 .long("include")
@@ -71,42 +72,33 @@ Default: ~/Code",
 excludes so if a directory is matched by an exclude pattern and an include
 pattern the directory will be included.",
                 ),
-        )
-        .subcommand(SubCommand::with_name("list"))
+        ).subcommand(SubCommand::with_name("list"))
         .subcommand(
             SubCommand::with_name("run")
                 .setting(AppSettings::TrailingVarArg)
                 .arg(Arg::with_name("ARGV").multiple(true).default_value("")),
-        )
-        .get_matches();
+        ).get_matches();
 
-    let mut config = Config {
-        code_dir: "~/Code".to_string(),
-        includes: None,
-        excludes: None,
-    };
-
-    let mut config_file = env::home_dir().unwrap_or(PathBuf::new());
+    let homedir = home_dir().unwrap_or(PathBuf::new());
+    let mut config_file = homedir.clone();
     config_file.push(".projector.yml");
-    if let Ok(mut cfg) = File::open(config_file) {
+
+    let mut config = if let Some(code_dirs) = matches.values_of("code-dir") {
+        Config::new(code_dirs.map(|s| s.to_string()).collect::<Vec<String>>())
+    } else if let Ok(mut cfg) = File::open(config_file) {
         let mut contents = String::new();
         cfg.read_to_string(&mut contents)
             .expect("unable to read config file");
-        config = match serde_yaml::from_str(&contents) {
+
+        match serde_yaml::from_str(&contents) {
             Ok(c) => c,
             Err(_) => {
                 println!("ERROR: Unable to deserialize config file. Maybe missing code_dir?");
                 process::exit(1);
             }
         }
-    }
-
-    config.code_dir = if let Some(dir) = matches.value_of("code-dir") {
-        dir.to_string()
-    } else if let Ok(dir) = env::var("CODE_DIR") {
-        dir
     } else {
-        config.code_dir
+        Config::one("~/Code".to_string())
     };
 
     if let Some(pattern) = matches.value_of("exclude") {
@@ -128,17 +120,13 @@ pattern the directory will be included.",
     }
 
     // Simple $HOME tilde expansion
-    if config.code_dir.starts_with("~") {
-        config.code_dir = config.code_dir.replacen(
-            "~",
-            &env::home_dir()
-                .expect("ERROR: Unable to find home dir.")
-                .to_str()
-                .unwrap_or("")
-                .to_string(),
-            1,
-        )
-    }
+    let homedir_s = homedir.to_str().unwrap_or("");
+
+    config.code_dirs = config
+        .code_dirs
+        .iter()
+        .map(|s| s.replacen("~", homedir_s, 1))
+        .collect();
 
     if let Some(_) = matches.subcommand_matches("list") {
         list(config);
