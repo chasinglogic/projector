@@ -64,24 +64,6 @@ where
     let include;
 
     if let Some(ref patterns) = config.excludes {
-        pat = "(".to_string();
-
-        for pattern in patterns {
-            pat.push_str(&pattern);
-            pat.push_str("|");
-        }
-
-        // Remove trailing |
-        pat.pop();
-        pat.push_str(")");
-
-        exclude = match Regex::new(&pat) {
-            Ok(r) => r,
-            Err(e) => {
-                println!("ERROR: Unable to compile regex: {}: {}", pat, e);
-                process::exit(1);
-            }
-        }
     } else {
         exclude = Regex::new("^$").unwrap();
     };
