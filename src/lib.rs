@@ -8,4 +8,4 @@ extern crate serde_derive;
 extern crate serde_yaml;
 
 pub mod commands;
-pub mod finder;
+pub mod find;

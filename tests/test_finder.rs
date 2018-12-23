@@ -1,6 +1,6 @@
 extern crate projector;
 
-use projector::finder::{Config, Finder};
+use projector::find::projects::{Config, Finder};
 use std::path::PathBuf;
 
 macro_rules! create_dirs {

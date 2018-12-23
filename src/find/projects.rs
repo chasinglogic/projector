@@ -6,8 +6,6 @@ use regex::Regex;
 
 use walkdir::WalkDir;
 
-// use rayon::prelude::*;
-
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub struct Config {
     pub code_dirs: Vec<String>,
@@ -36,6 +34,18 @@ impl Config {
 
     pub fn finder(self) -> Finder {
         Finder::from(self)
+    }
+}
+
+impl From<String> for Config {
+    fn from(s: String) -> Config {
+        Config::new(vec![s])
+    }
+}
+
+impl From<&str> for Config {
+    fn from(s: &str) -> Config {
+        Config::from(s.to_string())
     }
 }
 
