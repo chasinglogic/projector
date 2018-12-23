@@ -15,11 +15,35 @@ pub struct Config {
     pub includes: Option<Vec<String>>,
 }
 
+impl Config {
+    pub fn new(code_dirs: Vec<String>) -> Config {
+        Config {
+            code_dirs: code_dirs,
+            excludes: None,
+            includes: None,
+        }
+    }
+
+    pub fn with_excludes(mut self, excludes: Vec<String>) -> Config {
+        self.excludes = Some(excludes);
+        self
+    }
+
+    pub fn with_includes(mut self, includes: Vec<String>) -> Config {
+        self.includes = Some(includes);
+        self
+    }
+
+    pub fn finder(self) -> Finder {
+        Finder::from(self)
+    }
+}
+
 pub struct Finder {
     code_dirs: Box<Iterator<Item = PathBuf>>,
     walker: walkdir::IntoIter,
     excludes: Option<Regex>,
-    includes: Option<Regex>,
+    includes: Regex,
 }
 
 impl Iterator for Finder {
@@ -45,14 +69,20 @@ impl Iterator for Finder {
                 }
             };
 
-            println!("dir: {:?}", dir);
-
             let mut path = dir.path().to_path_buf();
             path.push(".git");
 
             if path.exists() {
                 path.pop();
                 self.walker.skip_current_dir();
+
+                if let Some(ref excludes) = self.excludes {
+                    // convert to string for regex matching
+                    let s = path.to_str().unwrap_or("").to_string();
+                    if excludes.is_match(&s) && !self.includes.is_match(&s) {
+                        continue;
+                    }
+                }
 
                 return Some(path);
             }
@@ -73,7 +103,8 @@ impl Finder {
             walker: WalkDir::new(iter.next().unwrap()).into_iter(),
             code_dirs: iter,
             excludes: None,
-            includes: None,
+            // guaranteed to compile to safe to unwrap
+            includes: Regex::new("^$").unwrap(),
         }
     }
 
@@ -83,7 +114,7 @@ impl Finder {
     }
 
     pub fn with_includes(mut self, includes: Regex) -> Finder {
-        self.includes = Some(includes);
+        self.includes = includes;
         self
     }
 
@@ -138,6 +169,10 @@ impl From<Config> for Finder {
             finder = finder.with_excludes(regex_from_patterns(patterns));
         }
 
+        if let Some(patterns) = cfg.includes {
+            finder = finder.with_includes(regex_from_patterns(patterns));
+        }
+
         finder
     }
 }
@@ -156,12 +191,6 @@ impl From<String> for Finder {
 
 impl From<Vec<String>> for Finder {
     fn from(dirs: Vec<String>) -> Finder {
-        let mut paths = Vec::with_capacity(dirs.len());
-
-        for (i, s) in dirs.iter().enumerate() {
-            paths[i] = PathBuf::from(s);
-        }
-
-        Finder::new(paths)
+        Finder::new(dirs.iter().map(PathBuf::from).collect())
     }
 }
