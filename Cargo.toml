@@ -20,3 +20,6 @@ serde_derive = "1.0.79"
 serde_yaml = "0.8.4"
 walkdir = "2.2.5"
 docopt = "1.0.2"
+
+[profile.release]
+lto = true
