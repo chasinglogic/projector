@@ -60,6 +60,7 @@ struct Args {
 fn alias(cmd: &str) -> &str {
     match cmd {
         "l" => "list",
+        "r" => "run",
         x => x,
     }
 }
@@ -148,6 +149,18 @@ fn main() {
 
                 commands::list::run(finder, args);
             }
+            "run" => {
+                let args: commands::run::Args = Docopt::new(commands::run::USAGE)
+                    .and_then(|d| {
+                        d.argv(subc_args)
+                            .options_first(true)
+                            .help(false)
+                            .deserialize()
+                    })
+                    .unwrap_or_else(|e| e.exit());
+
+                commands::run::run(finder, args);
+            }
             _ => {
                 println!("{}: is not a known subcommand", args.arg_command);
                 process::exit(1);
@@ -174,6 +187,7 @@ pub mod test {
 
     test_aliases! {
         "l", "list",
+        "r", "run",
         "nope", "nope",
     }
 }

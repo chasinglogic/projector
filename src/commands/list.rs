@@ -1,7 +1,7 @@
 use find::projects::Finder;
 
 pub const USAGE: &str = "
-Usage: list
+Usage: list [options]
 
 Options:
   --verbose  Print verbose information while finding repositories
