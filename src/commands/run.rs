@@ -1,4 +1,4 @@
-use find::projects::Finder;
+use crate::find::projects::Finder;
 use std::process::{exit, Command};
 
 pub const USAGE: &str = "
@@ -18,7 +18,7 @@ pub struct Args {
     arg_args: Vec<String>,
 }
 
-pub fn run(finder: Finder, args: Args) {
+pub fn run(finder: Finder, args: &Args) {
     match args.arg_args.split_first() {
         Some((program, arguments)) => {
             let mut child = Command::new(program);

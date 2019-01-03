@@ -16,7 +16,7 @@ pub struct Config {
 impl Config {
     pub fn new(code_dirs: Vec<String>) -> Config {
         Config {
-            code_dirs: code_dirs,
+            code_dirs,
             excludes: None,
             includes: None,
         }
@@ -88,7 +88,7 @@ impl Iterator for Finder {
 
                 if let Some(ref excludes) = self.excludes {
                     // convert to string for regex matching
-                    let s = path.to_str().unwrap_or("").to_string();
+                    let s = path.to_str().unwrap_or_default().to_string();
                     if excludes.is_match(&s) && !self.includes.is_match(&s) {
                         continue;
                     }
@@ -102,7 +102,7 @@ impl Iterator for Finder {
 
 impl Finder {
     pub fn new(code_dirs: Vec<PathBuf>) -> Finder {
-        let dirs = if code_dirs.len() == 0 {
+        let dirs = if code_dirs.is_empty() {
             vec![PathBuf::from(".")]
         } else {
             code_dirs
@@ -113,7 +113,7 @@ impl Finder {
             walker: WalkDir::new(iter.next().unwrap()).into_iter(),
             code_dirs: iter,
             excludes: None,
-            // guaranteed to compile to safe to unwrap
+            // guaranteed to compile to safe so unwrap
             includes: Regex::new("^$").unwrap(),
         }
     }
@@ -144,7 +144,7 @@ impl Finder {
         }
 
         println!("ERROR: {}", e);
-        return false;
+        false
     }
 }
 

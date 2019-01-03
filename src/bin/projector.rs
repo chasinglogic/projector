@@ -3,13 +3,9 @@
 
 #[macro_use]
 extern crate serde_derive;
-extern crate dirs;
-extern crate docopt;
-extern crate projector;
 
 use std::fs::File;
 use std::io::prelude::*;
-use std::path::PathBuf;
 use std::process;
 
 use dirs::home_dir;
@@ -79,7 +75,7 @@ fn main() {
         let mut subc_args = vec![subcommand.to_string()];
         subc_args.append(&mut args.arg_args);
 
-        let homedir = home_dir().unwrap_or(PathBuf::new());
+        let homedir = home_dir().unwrap_or_default();
         let mut config_file = homedir.clone();
         config_file.push(".projector.yml");
 
@@ -147,7 +143,7 @@ fn main() {
                     })
                     .unwrap_or_else(|e| e.exit());
 
-                commands::list::run(finder, args);
+                commands::list::run(finder, &args);
             }
             "run" => {
                 let args: commands::run::Args = Docopt::new(commands::run::USAGE)
@@ -159,7 +155,7 @@ fn main() {
                     })
                     .unwrap_or_else(|e| e.exit());
 
-                commands::run::run(finder, args);
+                commands::run::run(finder, &args);
             }
             _ => {
                 println!("{}: is not a known subcommand", args.arg_command);

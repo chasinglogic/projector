@@ -1,4 +1,4 @@
-use find::projects::Finder;
+use crate::find::projects::Finder;
 
 pub const USAGE: &str = "
 Usage: list [options]
@@ -16,7 +16,7 @@ pub struct Args {
     flag_verbose: bool,
 }
 
-pub fn run(finder: Finder, _args: Args) {
+pub fn run(finder: Finder, _args: &Args) {
     for project in finder {
         println!("{}", project.as_os_str().to_string_lossy());
     }
