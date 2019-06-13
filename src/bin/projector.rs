@@ -4,41 +4,20 @@
 #[macro_use]
 extern crate serde_derive;
 
+extern crate clap;
+
 use std::fs::File;
 use std::io::prelude::*;
 use std::process;
 
+use clap::{App, Arg, SubCommand};
+
 use dirs::home_dir;
-use docopt::Docopt;
 
 use projector::commands;
 use projector::find::projects::{Config, Finder};
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
-const USAGE: &str = "
-Usage: projector [options] <command> [<args>...]
-
-A code repository manager. Automate working across repositories.
-
-Options:
-  -h, --help            Print this help message
-  --version             Print version and license information
-  -v, --verbose         Print debug information, useful when submitting bug reports!
-  -c, --code-dir <dir>  The root of where to search for projects. Also can be
-                        configured using the environment variable CODE_DIR.
-
-  -e, --exclude <pattern>  A regex which will be used to exclude directories from commands.
-  -i, --include <pattern>  A regex which will be used to include directories from commands. Overrides
-                           excludes so if a directory is matched by an exclude pattern and an include
-                           pattern the directory will be included.
-
-Commands:
-   help  Print this help message
-   list  List projects found in your code directories
-   run   Run a shell command in all of your code directories
-
-See 'projector help <command>' for more information on a specific command.
-";
 
 #[derive(Deserialize, Debug)]
 struct Args {
@@ -62,9 +41,41 @@ fn alias(cmd: &str) -> &str {
 }
 
 fn main() {
-    let mut args: Args = Docopt::new(USAGE)
-        .and_then(|d| d.options_first(true).help(false).deserialize())
-        .unwrap_or_else(|e| e.exit());
+    let matches = App::new("projector")
+        .version(VERSION)
+        .about("A code repository manager.")
+        .author("Mathew Robinson (@chasinglogic)")
+        .arg(
+            Arg::with_name("exclude")
+                .short("e")
+                .value_name("PATTERN")
+                .multiple(true)
+                .help("A regex which will be used to exclude directories from commands."),
+        )
+        .arg(
+            Arg::with_name("include")
+                .short("i")
+                .value_name("PATTERN")
+                .multiple(true)
+                .help(
+                    "A regex which will be used to include
+                directories from commands. Overrides excludes so if a
+                directory is matched by an exclude pattern and an
+                include pattern the directory will be included.",
+                ),
+        )
+        .arg(
+            Arg::with_name("code-dir")
+                .short("c")
+                .value_name("DIRECTORY")
+                .multiple(true)
+                .help(
+                    "The root of where to search for projects. Also
+                     can be configured using the environment
+                     variable CODE_DIR.",
+                ),
+        )
+        .get_matches();
 
     if args.flag_version {
         println!("projector version {}", VERSION);
