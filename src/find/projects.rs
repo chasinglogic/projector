@@ -37,6 +37,12 @@ impl Config {
     }
 }
 
+impl From<&[String]> for Config {
+    fn from(dirs: &[String]) -> Config {
+        Config::new(dirs.to_vec())
+    }
+}
+
 impl From<String> for Config {
     fn from(s: String) -> Config {
         Config::new(vec![s])
