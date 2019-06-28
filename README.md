@@ -20,7 +20,7 @@ Or you can build it locally with:
 ```
 git clone https://github.com/chasinglogic/projector $PATH_TO_PROJECTOR
 cd $PATH_TO_PROJECTOR
-cargon install --path .
+cargo install --path .
 ```
 
 ## Usage
