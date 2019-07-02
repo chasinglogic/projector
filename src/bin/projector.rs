@@ -53,7 +53,7 @@ fn find(finder: Finder, matches: &clap::ArgMatches) {
             println!("{}", project);
             return;
         }
-    } else {
+    } else if matched_projects.len() > 0 {
         let shortest_path = matched_projects.iter().fold(
             (
                 &matched_projects[0],
