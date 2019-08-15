@@ -1,8 +1,7 @@
 // Copyright 2018 Mathew Robinson <chasinglogic@gmail.com>. All rights reserved. Use of this source code is
 // governed by the Apache-2.0 license that can be found in the LICENSE file.
 
-extern crate clap;
-extern crate regex;
+mod find;
 
 use std::fs::File;
 use std::io;
@@ -13,13 +12,13 @@ use clap::{App, AppSettings, Arg, SubCommand};
 
 use dirs::home_dir;
 
-use projector::find::projects::{Config, Finder};
+use find::projects::{Config, Finder};
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 fn last_match_percent(s: &String, rgx: &regex::Regex) -> f64 {
     let shortest_match = rgx.shortest_match(s).unwrap_or(1);
-    return s.len() as f64 / shortest_match as f64;
+    s.len() as f64 / shortest_match as f64
 }
 
 fn find(finder: Finder, matches: &clap::ArgMatches) {
@@ -126,7 +125,7 @@ fn main() {
                 .help("Enable verbosity options for all commands"),
         )
         .arg(
-            Arg::with_name("exclude")
+            Arg::with_name("excludes")
                 .long("exclude")
                 .short("e")
                 .value_name("PATTERN")
@@ -134,7 +133,7 @@ fn main() {
                 .help("A regex which will be used to exclude directories from commands."),
         )
         .arg(
-            Arg::with_name("include")
+            Arg::with_name("includes")
                 .long("include")
                 .short("i")
                 .value_name("PATTERN")
@@ -148,7 +147,6 @@ fn main() {
                 .long("code-dir")
                 .short("c")
                 .value_name("DIRECTORY")
-                .multiple(true)
                 .help(
                     "The root of where to search for projects. Also can be configured using the environment variable CODE_DIR.",
                 ),
@@ -167,9 +165,8 @@ fn main() {
             SubCommand::with_name("run")
                 .alias("x")
                 .about("Execute command on all matched repos")
-                .help("Execute command on all matched repos")
                 .setting(AppSettings::TrailingVarArg)
-                .arg(Arg::with_name("COMMAND")),
+                .arg(Arg::with_name("COMMAND").required(true).multiple(true)),
         )
         .subcommand(
             SubCommand::with_name("find")
@@ -207,58 +204,42 @@ If used with --verbose will print all matches.",
             exit(1);
         }
 
-        match serde_yaml::from_str(&contents) {
+        let mut c: Config = match serde_yaml::from_str(&contents) {
             Ok(c) => c,
             Err(e) => {
                 println!("ERROR: Unable to deserialize config file. Maybe missing code_dir key?");
                 println!("Full error: {}", e);
                 exit(1);
             }
-        }
+        };
+
+        c.code_dirs = c
+            .code_dirs
+            .iter()
+            .map(|s| s.replacen("~", homedir_s, 1))
+            .collect();
+        c
     } else {
         Config::from(format!("{}/Code", homedir_s))
     };
 
-    config.code_dirs = config
-        .code_dirs
-        .iter()
-        .map(|s| s.replacen("~", homedir_s, 1))
-        .collect();
-
     if let Some(excludes) = matches.values_of("excludes") {
-        let mut patterns = excludes.map(|s| s.to_string()).collect::<Vec<String>>();
-        if let Some(mut existing_excludes) = config.excludes {
-            existing_excludes.append(&mut patterns);
-            config.excludes = Some(existing_excludes);
-        } else {
-            config.excludes = Some(patterns);
-        }
+        config = config.with_excludes(excludes.map(|s| s.to_string()).collect());
     }
 
     if let Some(includes) = matches.values_of("includes") {
-        let mut patterns = includes.map(|s| s.to_string()).collect::<Vec<String>>();
-        if let Some(mut existing_includes) = config.includes {
-            existing_includes.append(&mut patterns);
-            config.includes = Some(existing_includes);
-        } else {
-            config.includes = Some(patterns);
-        }
+        config = config.with_includes(includes.map(|s| s.to_string()).collect());
     }
 
     let finder = Finder::from(config);
 
-    if let Some(_) = matches.subcommand_matches("list") {
-        list(finder);
-        return;
-    }
-
-    if let Some(matches) = matches.subcommand_matches("run") {
-        run(finder, matches);
-        return;
-    }
-
-    if let Some(matches) = matches.subcommand_matches("find") {
-        find(finder, matches);
-        return;
+    match matches.subcommand() {
+        ("list", Some(_)) => list(finder),
+        ("run", Some(args)) => run(finder, args),
+        ("find", Some(args)) => find(finder, args),
+        (s, _) => {
+            println!("Unknown subcommand: {}", s);
+            exit(1);
+        }
     }
 }

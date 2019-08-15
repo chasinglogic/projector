@@ -2,11 +2,11 @@ use std::io::ErrorKind;
 use std::path::PathBuf;
 use std::process;
 
-use regex::Regex;
-
+use regex::RegexSet;
+use serde::Deserialize;
 use walkdir::WalkDir;
 
-#[derive(Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Deserialize)]
 pub struct Config {
     pub code_dirs: Vec<String>,
     pub excludes: Option<Vec<String>>,
@@ -31,10 +31,6 @@ impl Config {
         self.includes = Some(includes);
         self
     }
-
-    pub fn finder(self) -> Finder {
-        Finder::from(self)
-    }
 }
 
 impl From<&[String]> for Config {
@@ -56,10 +52,10 @@ impl From<&str> for Config {
 }
 
 pub struct Finder {
-    code_dirs: Box<Iterator<Item = PathBuf>>,
+    code_dirs: Box<dyn Iterator<Item = PathBuf>>,
     walker: walkdir::IntoIter,
-    excludes: Option<Regex>,
-    includes: Regex,
+    excludes: Option<RegexSet>,
+    includes: RegexSet,
 }
 
 impl Iterator for Finder {
@@ -120,16 +116,16 @@ impl Finder {
             code_dirs: iter,
             excludes: None,
             // guaranteed to compile to safe so unwrap
-            includes: Regex::new("^$").unwrap(),
+            includes: RegexSet::new(&["^$"]).unwrap(),
         }
     }
 
-    pub fn with_excludes(mut self, excludes: Regex) -> Finder {
+    pub fn with_excludes(mut self, excludes: RegexSet) -> Finder {
         self.excludes = Some(excludes);
         self
     }
 
-    pub fn with_includes(mut self, includes: Regex) -> Finder {
+    pub fn with_includes(mut self, includes: RegexSet) -> Finder {
         self.includes = includes;
         self
     }
@@ -156,22 +152,15 @@ impl Finder {
 
 // Combine multiple regex strings into a single regex that logical
 // "or"s the given regex patterns together.
-fn regex_from_patterns(patterns: Vec<String>) -> Regex {
-    let mut pat = "(".to_string();
-
-    for pattern in patterns {
-        pat.push_str(&pattern);
-        pat.push_str("|");
-    }
-
-    // Remove trailing |
-    pat.pop();
-    pat.push_str(")");
-
-    match Regex::new(&pat) {
+fn regex_from_patterns(patterns: Vec<String>) -> RegexSet {
+    match RegexSet::new(&patterns) {
         Ok(r) => r,
         Err(e) => {
-            println!("ERROR: Unable to compile regex: {}: {}", pat, e);
+            println!(
+                "ERROR: Unable to compile regex: {}: {}",
+                patterns.join(" "),
+                e
+            );
             process::exit(1);
         }
     }
@@ -179,17 +168,9 @@ fn regex_from_patterns(patterns: Vec<String>) -> Regex {
 
 impl From<Config> for Finder {
     fn from(cfg: Config) -> Finder {
-        let mut finder = Finder::from(cfg.code_dirs);
-
-        if let Some(patterns) = cfg.excludes {
-            finder = finder.with_excludes(regex_from_patterns(patterns));
-        }
-
-        if let Some(patterns) = cfg.includes {
-            finder = finder.with_includes(regex_from_patterns(patterns));
-        }
-
-        finder
+        Finder::from(cfg.code_dirs)
+            .with_excludes(regex_from_patterns(cfg.excludes.unwrap_or_default()))
+            .with_includes(regex_from_patterns(cfg.includes.unwrap_or_default()))
     }
 }
 

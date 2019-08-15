@@ -16,7 +16,7 @@ ansi_term = "0.9.0"
 clap = "2.33.0"
 dirs = "1.0.4"
 regex = "1.1.7"
-serde = "1.0.79"
+serde = { version = "1.0.79", features = ["derive"] }
 serde_derive = "1.0.79"
 serde_yaml = "0.8.4"
 walkdir = "2.2.5"
