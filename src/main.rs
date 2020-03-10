@@ -8,7 +8,7 @@ use std::io;
 use std::io::prelude::*;
 use std::process::{exit, Command};
 
-use clap::{App, AppSettings, Arg, SubCommand};
+use clap::{App, AppSettings, Arg, SubCommand, Values};
 
 use dirs::home_dir;
 
@@ -16,7 +16,7 @@ use find::projects::{Config, Finder};
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
-fn last_match_percent(s: &String, rgx: &regex::Regex) -> f64 {
+fn last_match_percent(s: &str, rgx: &regex::Regex) -> f64 {
     let shortest_match = rgx.shortest_match(s).unwrap_or(1);
     s.len() as f64 / shortest_match as f64
 }
@@ -50,47 +50,49 @@ fn find(finder: Finder, matches: &clap::ArgMatches) {
     if matches.is_present("verbose") {
         for project in matched_projects {
             println!("{}", project);
-            return;
         }
-    } else if matched_projects.len() > 0 {
-        let shortest_path = matched_projects.iter().fold(
-            (
-                &matched_projects[0],
-                last_match_percent(&matched_projects[0], &rgx),
-            ),
-            |acc, item| {
-                let last_match = last_match_percent(&item, &rgx);
-                if reverse_search && last_match > acc.1 {
-                    (item, last_match)
-                } else if !reverse_search && last_match < acc.1 {
-                    (item, last_match)
-                } else {
-                    acc
-                }
-            },
-        );
 
-        println!("{}", shortest_path.0);
+        return;
     }
+
+    if matched_projects.is_empty() {
+        println!("No projects matched that search.");
+        return;
+    }
+
+    let shortest_path = matched_projects.iter().fold(
+        (
+            &matched_projects[0],
+            last_match_percent(&matched_projects[0], &rgx),
+        ),
+        |acc, item| {
+            let last_match = last_match_percent(&item, &rgx);
+            if (reverse_search && last_match > acc.1) || (!reverse_search && last_match < acc.1) {
+                (item, last_match)
+            } else {
+                acc
+            }
+        },
+    );
+
+    println!("{}", shortest_path.0);
 }
 
 fn list(finder: Finder) {
     for project in finder {
-        match writeln!(
+        writeln!(
             io::stdout().lock(),
             "{}",
             project.as_os_str().to_string_lossy()
-        ) {
-            Ok(()) => (),
-            Err(_) => (),
-        };
+        )
+        .unwrap_or(());
     }
 }
 
 fn run(finder: Finder, matches: &clap::ArgMatches) {
     let command: Vec<&str> = matches
         .values_of("COMMAND")
-        .unwrap_or(clap::Values::default())
+        .unwrap_or(Values::default())
         .collect();
 
     match command.split_first() {
@@ -129,7 +131,6 @@ fn main() {
                 .long("exclude")
                 .short("e")
                 .value_name("PATTERN")
-                .multiple(true)
                 .help("A regex which will be used to exclude directories from commands."),
         )
         .arg(
@@ -137,7 +138,6 @@ fn main() {
                 .long("include")
                 .short("i")
                 .value_name("PATTERN")
-                .multiple(true)
                 .help(
                     "A regex which will be used to include directories from commands. Overrides excludes so if a directory is matched by an exclude pattern and an include pattern the directory will be included.",
                 ),
@@ -153,7 +153,6 @@ fn main() {
         )
         .settings(&[
             AppSettings::GlobalVersion,
-            AppSettings::SubcommandRequiredElseHelp,
             AppSettings::DeriveDisplayOrder,
         ])
         .subcommand(
