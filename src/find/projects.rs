@@ -1,6 +1,6 @@
 use std::io::ErrorKind;
 use std::path::PathBuf;
-use std::process;
+use std::process::{self, Command};
 
 use regex::RegexSet;
 use serde::Deserialize;
@@ -56,6 +56,7 @@ pub struct Finder {
     walker: walkdir::IntoIter,
     excludes: Option<RegexSet>,
     includes: RegexSet,
+    dirty_only: bool,
 }
 
 impl Iterator for Finder {
@@ -96,6 +97,20 @@ impl Iterator for Finder {
                     }
                 }
 
+                if self.dirty_only {
+                    let mut child = Command::new("git");
+                    child.args(["status", "--porcelain"]);
+
+                    let proc = child
+                        .current_dir(path.clone())
+                        .output()
+                        .expect("failed to start git!");
+
+                    if proc.stdout == "".as_bytes() {
+                        continue;
+                    }
+                }
+
                 return Some(path);
             }
         }
@@ -117,6 +132,7 @@ impl Finder {
             excludes: None,
             // guaranteed to compile to safe so unwrap
             includes: RegexSet::new(&["^$"]).unwrap(),
+            dirty_only: false,
         }
     }
 
@@ -127,6 +143,11 @@ impl Finder {
 
     pub fn with_includes(mut self, includes: RegexSet) -> Finder {
         self.includes = includes;
+        self
+    }
+
+    pub fn with_dirty_only(mut self, only_dirty: bool) -> Finder {
+        self.dirty_only = only_dirty;
         self
     }
 

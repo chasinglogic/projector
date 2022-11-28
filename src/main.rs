@@ -158,7 +158,13 @@ fn main() {
         .subcommand(
             SubCommand::with_name("list")
                 .alias("ls")
-                .about("List all projects that projector would operate on"),
+                .about("List all projects that projector would operate on")
+                .arg(
+                    Arg::with_name("dirty")
+                    .long("dirty")
+                    .short("d")
+                    .help("List all repositories with a dirty state")
+                ),
         )
         .subcommand(
             SubCommand::with_name("run")
@@ -233,7 +239,7 @@ If used with --verbose will print all matches.",
     let finder = Finder::from(config);
 
     match matches.subcommand() {
-        ("list", Some(_)) => list(finder),
+        ("list", Some(args)) => list(finder.with_dirty_only(args.is_present("dirty"))),
         ("run", Some(args)) => run(finder, args),
         ("find", Some(args)) => find(finder, args),
         (s, _) => {
