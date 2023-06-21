@@ -1,9 +1,12 @@
 package projects
 
 import (
+	"errors"
 	"os"
 	"path"
 )
+
+var Stop = errors.New("find has been cancelled")
 
 type ProjectFunc func(string) error
 
@@ -19,8 +22,10 @@ func Find(root string, cb ProjectFunc) error {
 	}
 
 	entries, err := os.ReadDir(root)
-	if err != nil {
+	if err != nil && !os.IsNotExist(err) {
 		return err
+	} else if err != nil {
+		return nil
 	}
 
 	for _, entry := range entries {

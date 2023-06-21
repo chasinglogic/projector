@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"os/exec"
 
 	"github.com/spf13/cobra"
 )
@@ -9,6 +10,20 @@ import (
 var dirtyOnly bool
 
 func printProject(path string) error {
+	if dirtyOnly {
+		git := exec.Command("git", "status", "--short")
+		git.Dir = path
+		output, err := git.CombinedOutput()
+		if err != nil {
+			return err
+		}
+
+		isClean := len(output) == 0
+		if isClean {
+			return nil
+		}
+	}
+
 	_, err := fmt.Println(path)
 	return err
 }
