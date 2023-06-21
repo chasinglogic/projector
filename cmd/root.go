@@ -24,6 +24,12 @@ func init() {
 		panic(err)
 	}
 
+	rootCmd.PersistentFlags().StringSliceP("excludes", "e", []string{}, "Regex to exclude results from the search set")
+	viper.BindPFlag("excludes", rootCmd.PersistentFlags().Lookup("excludes"))
+
+	rootCmd.PersistentFlags().StringSliceP("includes", "i", []string{}, "Regex to include results from the search set, overrides any exclude patterns")
+	viper.BindPFlag("includes", rootCmd.PersistentFlags().Lookup("includes"))
+
 	rootCmd.PersistentFlags().StringSliceP("code-dir", "c", []string{home}, "Directories to search for projects")
 	viper.BindPFlag("code_dirs", rootCmd.PersistentFlags().Lookup("code-dir"))
 
