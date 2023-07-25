@@ -46,7 +46,7 @@ fn find(finder: Finder, matches: &clap::ArgMatches) {
         }
     }
 
-    let reverse_search = matches.is_present("reverse");
+    let _reverse_search = matches.is_present("reverse");
     if matches.is_present("verbose") {
         for project in matched_projects {
             println!("{}", project);
@@ -60,22 +60,18 @@ fn find(finder: Finder, matches: &clap::ArgMatches) {
         return;
     }
 
-    let shortest_path = matched_projects.iter().fold(
-        (
-            &matched_projects[0],
-            last_match_percent(&matched_projects[0], &rgx),
-        ),
-        |acc, item| {
-            let last_match = last_match_percent(&item, &rgx);
-            if (reverse_search && last_match > acc.1) || (!reverse_search && last_match < acc.1) {
-                (item, last_match)
-            } else {
-                acc
-            }
-        },
-    );
+    let mut shortest_path = "";
+    let mut shortest_path_percentage = 0.0;
 
-    println!("{}", shortest_path.0);
+    for project in matched_projects.iter() {
+        let percentage_match = last_match_percent(&project, &rgx);
+        if percentage_match > shortest_path_percentage {
+            shortest_path_percentage = percentage_match;
+            shortest_path = project;
+        }
+    }
+
+    println!("{}", shortest_path);
 }
 
 fn list(finder: Finder) {
