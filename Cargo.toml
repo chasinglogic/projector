@@ -9,17 +9,16 @@ name = "projector"
 readme = "README.md"
 repository = "https://github.com/chasinglogic/projector"
 version = "1.0.0"
-edition = "2018"
+edition = "2021"
 
 [dependencies]
-ansi_term = "*"
-clap = { version = "*", features = ["derive"] }
-dirs = "*"
-regex = "*"
-serde = { version = "*", features = ["derive"] }
-serde_derive = "*"
-serde_yaml = "*"
-walkdir = "*"
+ansi_term = "0.12.1"
+clap = { version = "4.3.21", features = ["derive"] }
+dirs = "5.0.1"
+regex = "1.9.3"
+serde = { version = "1.0.183", features = ["derive"] }
+serde_yaml = "0.9.25"
+walkdir = "2.3.3"
 
 [profile.release]
 lto = true

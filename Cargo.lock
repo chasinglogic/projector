@@ -295,7 +295,6 @@ dependencies = [
  "dirs",
  "regex",
  "serde",
- "serde_derive",
  "serde_yaml",
  "walkdir",
 ]
