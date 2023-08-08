@@ -12,14 +12,13 @@ version = "0.6.0"
 edition = "2018"
 
 [dependencies]
-ansi_term = "0.12.1"
-clap = "2.34.0"
-dirs = "2.0.2"
-regex = "1.7.0"
-serde = { version = "1.0.148", features = ["derive"] }
-serde_derive = "1.0.148"
-serde_yaml = "0.8.26"
-walkdir = "2.3.2"
+ansi_term = "*"
+clap = "*"
+dirs = "*"
+regex = "*"
+serde = { version = "*", features = ["derive"] }
+serde_yaml = "*"
+walkdir = "*"
 
 [profile.release]
 lto = true

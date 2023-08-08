@@ -2,6 +2,7 @@ use std::io::ErrorKind;
 use std::path::PathBuf;
 use std::process::{self, Command};
 
+use super::filter::Filters;
 use regex::RegexSet;
 use serde::Deserialize;
 use walkdir::WalkDir;
@@ -54,8 +55,7 @@ impl From<&str> for Config {
 pub struct Finder {
     code_dirs: Box<dyn Iterator<Item = PathBuf>>,
     walker: walkdir::IntoIter,
-    excludes: Option<RegexSet>,
-    includes: RegexSet,
+    filters: Filters,
     dirty_only: bool,
 }
 
@@ -117,6 +117,14 @@ impl Iterator for Finder {
     }
 }
 
+fn is_hidden(entry: &DirEntry) -> bool {
+    entry
+        .file_name()
+        .to_str()
+        .map(|s| s.starts_with("."))
+        .unwrap_or(false)
+}
+
 impl Finder {
     pub fn new(code_dirs: Vec<PathBuf>) -> Finder {
         let dirs = if code_dirs.is_empty() {
@@ -125,13 +133,13 @@ impl Finder {
             code_dirs
         };
 
+        let mut filters = Filters::new();
+
         let mut iter = Box::new(dirs.into_iter());
         Finder {
             walker: WalkDir::new(iter.next().unwrap()).into_iter(),
             code_dirs: iter,
-            excludes: None,
-            // guaranteed to compile to safe so unwrap
-            includes: RegexSet::new(&["^$"]).unwrap(),
+            filters,
             dirty_only: false,
         }
     }
@@ -162,7 +170,7 @@ impl Finder {
             match err.kind() {
                 ErrorKind::NotFound => return true,
                 ErrorKind::PermissionDenied => return true,
-                _ => return false,
+                _ => (),
             }
         }
 
