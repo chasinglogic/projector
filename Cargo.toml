@@ -13,7 +13,7 @@ edition = "2018"
 
 [dependencies]
 ansi_term = "*"
-clap = "*"
+clap = { version = "*", features = ["derive"] }
 dirs = "*"
 regex = "*"
 serde = { version = "*", features = ["derive"] }

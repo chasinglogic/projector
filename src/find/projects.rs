@@ -89,14 +89,6 @@ impl Iterator for Finder {
                 path.pop();
                 self.walker.skip_current_dir();
 
-                if let Some(ref excludes) = self.excludes {
-                    // convert to string for regex matching
-                    let s = path.to_str().unwrap_or_default().to_string();
-                    if excludes.is_match(&s) && !self.includes.is_match(&s) {
-                        continue;
-                    }
-                }
-
                 if self.dirty_only {
                     let mut child = Command::new("git");
                     child.args(["status", "--porcelain"]);
@@ -117,14 +109,6 @@ impl Iterator for Finder {
     }
 }
 
-fn is_hidden(entry: &DirEntry) -> bool {
-    entry
-        .file_name()
-        .to_str()
-        .map(|s| s.starts_with("."))
-        .unwrap_or(false)
-}
-
 impl Finder {
     pub fn new(code_dirs: Vec<PathBuf>) -> Finder {
         let dirs = if code_dirs.is_empty() {
@@ -133,7 +117,7 @@ impl Finder {
             code_dirs
         };
 
-        let mut filters = Filters::new();
+        let filters = Filters::new();
 
         let mut iter = Box::new(dirs.into_iter());
         Finder {
@@ -145,12 +129,12 @@ impl Finder {
     }
 
     pub fn with_excludes(mut self, excludes: RegexSet) -> Finder {
-        self.excludes = Some(excludes);
+        self.filters = self.filters.with_excludes(excludes);
         self
     }
 
     pub fn with_includes(mut self, includes: RegexSet) -> Finder {
-        self.includes = includes;
+        self.filters = self.filters.with_includes(includes);
         self
     }
 
