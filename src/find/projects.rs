@@ -54,7 +54,7 @@ impl From<&str> for Config {
 pub struct Finder {
     code_dirs: Box<dyn Iterator<Item = PathBuf>>,
     walker: walkdir::IntoIter,
-    excludes: Option<RegexSet>,
+    excludes: RegexSet,
     includes: RegexSet,
     dirty_only: bool,
 }
@@ -83,19 +83,17 @@ impl Iterator for Finder {
             };
 
             let mut path = dir.path().to_path_buf();
+            let path_string = path.to_str().unwrap_or_default();
+            if self.excludes.is_match(path_string) && !self.includes.is_match(path_string) {
+                self.walker.skip_current_dir();
+                continue;
+            }
+
             path.push(".git");
 
             if path.exists() {
                 path.pop();
                 self.walker.skip_current_dir();
-
-                if let Some(ref excludes) = self.excludes {
-                    // convert to string for regex matching
-                    let s = path.to_str().unwrap_or_default().to_string();
-                    if excludes.is_match(&s) && !self.includes.is_match(&s) {
-                        continue;
-                    }
-                }
 
                 if self.dirty_only {
                     let mut child = Command::new("git");
@@ -129,15 +127,15 @@ impl Finder {
         Finder {
             walker: WalkDir::new(iter.next().unwrap()).into_iter(),
             code_dirs: iter,
-            excludes: None,
             // guaranteed to compile to safe so unwrap
+            excludes: RegexSet::new(&["^$"]).unwrap(),
             includes: RegexSet::new(&["^$"]).unwrap(),
             dirty_only: false,
         }
     }
 
     pub fn with_excludes(mut self, excludes: RegexSet) -> Finder {
-        self.excludes = Some(excludes);
+        self.excludes = excludes;
         self
     }
 
