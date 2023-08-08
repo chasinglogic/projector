@@ -68,7 +68,7 @@ impl Iterator for Finder {
                 Some(Ok(dir)) => dir,
                 None => match self.code_dirs.next() {
                     Some(dir) => {
-                        self.walker = WalkDir::new(dir).into_iter();
+                        self.walker = WalkDir::new(dir).min_depth(1).into_iter();
                         continue;
                     }
                     None => return None,
@@ -125,7 +125,7 @@ impl Finder {
 
         let mut iter = Box::new(dirs.into_iter());
         Finder {
-            walker: WalkDir::new(iter.next().unwrap()).into_iter(),
+            walker: WalkDir::new(iter.next().unwrap()).min_depth(1).into_iter(),
             code_dirs: iter,
             // guaranteed to compile to safe so unwrap
             excludes: RegexSet::new(&["^$"]).unwrap(),
