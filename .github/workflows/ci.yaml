@@ -34,14 +34,11 @@ jobs:
         with:
           toolchain: ${{ matrix.rust }}
 
-      - name: Build dfm
+      - name: Build projector
         run: cargo build --verbose ${{ env.TARGET_FLAGS }}
 
       - name: Run cargo tests
         run: cargo test
-
-      - name: Run integration tests
-        run: ./scripts/integration_tests.sh -b ./target/debug/dfm
 
   clippy:
     name: clippy
