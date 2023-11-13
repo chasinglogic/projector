@@ -12,7 +12,6 @@ version = "1.0.0"
 edition = "2021"
 
 [dependencies]
-ansi_term = "0.12.1"
 clap = { version = "4.3.21", features = ["derive"] }
 dirs = "5.0.1"
 regex = "1.9.3"
