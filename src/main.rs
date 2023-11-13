@@ -2,7 +2,8 @@
 // Use of this source code is governed by the Apache-2.0 license that can be
 // found in the LICENSE file.
 
-mod find;
+mod commands;
+pub mod find;
 
 use std::fs::File;
 use std::io;
@@ -13,60 +14,8 @@ use clap::{Parser, Subcommand};
 
 use dirs::home_dir;
 
+use commands::find;
 use find::projects::{Config, Finder};
-
-fn last_match_percent(s: &str, rgx: &regex::Regex) -> f64 {
-    let shortest_match = rgx.shortest_match(s).unwrap_or(1);
-    s.len() as f64 / shortest_match as f64
-}
-
-fn find(finder: Finder, search_term: String, reverse: bool, verbose: bool) {
-    let rgx = match regex::Regex::new(&search_term) {
-        Ok(r) => r,
-        Err(e) => {
-            println!("Unable to compile regex: {}", e);
-            exit(1);
-        }
-    };
-
-    let mut matched_projects = Vec::new();
-    for project in finder {
-        let project_path = project.as_os_str().to_string_lossy();
-        if rgx.is_match(&project_path) {
-            matched_projects.push(project_path.to_string().clone());
-        }
-    }
-
-    if matched_projects.is_empty() {
-        println!("No projects matched that search.");
-        return;
-    }
-
-    if verbose {
-        for project in matched_projects {
-            println!("{}", project);
-        }
-
-        return;
-    }
-
-    let shortest_path = matched_projects.iter().fold(
-        (
-            &matched_projects[0],
-            last_match_percent(&matched_projects[0], &rgx),
-        ),
-        |acc, item| {
-            let last_match = last_match_percent(&item, &rgx);
-            if (reverse && last_match > acc.1) || (!reverse && last_match < acc.1) {
-                (item, last_match)
-            } else {
-                acc
-            }
-        },
-    );
-
-    println!("{}", shortest_path.0);
-}
 
 fn list(finder: Finder) {
     for project in finder {
