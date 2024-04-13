@@ -7,6 +7,28 @@ fn last_match_percent(s: &str, rgx: &regex::Regex) -> f64 {
     shortest_match as f64 / s.len() as f64
 }
 
+/// get_rightmost_match sorts the matched_projects by how far right the match is in the directory
+/// path. For an example consider these matched projects for the term "suffix":
+///
+///   - /some/path/projecta-suffix
+///   - /some/path/suffix-ex
+///   - /some/path/project-suffix-in-the-middle
+///
+/// Each of these projects would be matched because they contain the word "suffix" however if we
+/// want to narrow this down the "best" match we need to determine which of them matches suffix
+/// closest to the end of its string.
+///
+/// We do this by calculating as a percentage how far right the end of the match is from the end of
+/// the string. So in the case of `/some/path/projecta-suffix` it would be 100% as it's the end of
+/// that string. In the case of `/some/path/suffix-ex` it would be 80% because the end of suffix is
+/// the 16th character out of 20.
+///
+/// We then sort by highest percentage match and return the first result.
+///
+/// In the case of a tie for highest percentage match we prefer the shortest string. So if we added
+/// the result `/some/path/pa-suffix` to the set above it would also have a 100% match but because
+/// it is shorter than `/some/path/projecta-suffix` it is considered a better match and so will be
+/// sorted higher.
 fn get_rightmost_match<'a>(
     matched_projects: &'a mut Vec<String>,
     reverse: bool,
@@ -20,7 +42,13 @@ fn get_rightmost_match<'a>(
         if less_than {
             Ordering::Less
         } else if equal {
-            Ordering::Equal
+            if a.len() == b.len() {
+                Ordering::Equal
+            } else if a.len() < b.len() {
+                Ordering::Greater
+            } else {
+                Ordering::Less
+            }
         } else {
             Ordering::Greater
         }
