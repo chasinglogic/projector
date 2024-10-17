@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"path"
@@ -15,6 +16,17 @@ import (
 func printProject(project string) error {
 	fmt.Println(project)
 	return nil
+}
+
+func findProject(searchString string) func(string) error {
+	return func(project string) error {
+		if strings.Contains(project, searchString) {
+			fmt.Println(project)
+			return errors.New("found!")
+		}
+
+		return nil
+	}
 }
 
 func do() error {

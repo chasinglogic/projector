@@ -17,11 +17,24 @@ func Find(
 ) {
 	ctx, cancel := context.WithCancel(parentCtx)
 	var projectChan = make(chan string, 10)
-	var wg sync.WaitGroup
+	var cleanupChan = make(chan struct{})
 
-	wg.Add(1)
-	go findProjects(&wg, rootDir, projectChan, excludes)
+	// A cleanup go routine. This is used in case the callback returns an error
+	// and just clears out the project channel so all the findProjects workers
+	// can terminate.
+	go func() {
+		for {
+			select {
+			case <-cleanupChan:
+				for range projectChan {
+				}
+			}
+		}
+	}()
 
+	// A message passing goroutine. This simple reads results from the project
+	// channel and passes them to the callback. If the callback returns an error
+	// it triggers cleanup and cancels the context.
 	go func() {
 		for {
 			select {
@@ -29,49 +42,71 @@ func Find(
 				return
 			case project := <-projectChan:
 				if err := cb(project); err != nil {
+					cleanupChan <- struct{}{}
 					cancel()
 				}
 			}
 		}
 	}()
 
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go findProjects(&wg, ctx, rootDir, projectChan, includes, excludes)
 	wg.Wait()
-	cancel()
-	close(projectChan)
 
+	cancel()
 }
 
 func findProjects(
 	wg *sync.WaitGroup,
+	ctx context.Context,
 	rootDir string,
 	projects chan string,
+	includes *regexp.Regexp,
 	excludes *regexp.Regexp,
 ) {
 	defer wg.Done()
 
-	entries, err := os.ReadDir(rootDir)
-	if err != nil && os.IsNotExist(err) {
+	select {
+	case <-ctx.Done():
 		return
-	} else if err != nil {
-		panic(err)
-	}
+	default:
+		entries, err := os.ReadDir(rootDir)
+		if err != nil && os.IsNotExist(err) {
+			return
+		} else if err != nil {
+			panic(err)
+		}
 
-	for _, entry := range entries {
-		if entry.Name() == ".git" {
-			projects <- rootDir
+		found := false
+		for _, entry := range entries {
+			if entry.IsDir() {
+				child := path.Join(rootDir, entry.Name())
+				lookAhead := path.Join(child, ".git")
+				if _, err := os.Stat(lookAhead); err == nil {
+					projects <- child
+					found = true
+				}
+			}
+		}
+
+		if found {
 			return
 		}
-	}
 
-	for _, entry := range entries {
-		if entry.IsDir() {
-			subdir := path.Join(rootDir, entry.Name())
-			if excludes != nil && excludes.MatchString(subdir) {
-				continue
+		for _, entry := range entries {
+			if entry.IsDir() {
+				subdir := path.Join(rootDir, entry.Name())
+				shouldExclude := excludes != nil && excludes.MatchString(subdir)
+				shouldInclude := includes != nil && includes.MatchString(subdir)
+				if shouldExclude && !shouldInclude {
+					continue
+				}
+
+				wg.Add(1)
+				go findProjects(wg, ctx, subdir, projects, includes, excludes)
 			}
-
-			wg.Add(1)
-			go findProjects(wg, subdir, projects, excludes)
 		}
+
 	}
 }
