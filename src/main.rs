@@ -119,7 +119,7 @@ fn main() {
             exit(1);
         }
 
-        let mut c: Config = match serde_yaml::from_str(&contents) {
+        let mut c: Config = match serde_yml::from_str(&contents) {
             Ok(c) => c,
             Err(e) => {
                 println!("ERROR: Unable to deserialize config file. Maybe missing code_dir key?");
