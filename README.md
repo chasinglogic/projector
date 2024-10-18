@@ -26,29 +26,23 @@ cargo install --path .
 ## Usage
 
 ```
-projector 0.2.0
-Mathew Robinson <chasinglogic@gmail.com>
+A code repository manager.
 
-USAGE:
-    projector [OPTIONS] [SUBCOMMAND]
+Usage: projector [OPTIONS] [COMMAND]
 
-FLAGS:
-    -h, --help       Prints help information
-    -V, --version    Prints version information
+Commands:
+  list  List all projects that projector would operate on
+  find  Find projects by matching their paths
+  run   Run a command on all matching projects
+  help  Print this message or the help of the given subcommand(s)
 
-OPTIONS:
-    -c, --code-dir <CODE_DIR>    The root of where to search for projects. Also can be
-                                 configured using the environment variable CODE_DIR.
-                                 Default: ~/Code
-    -e, --exclude <PATTERN>      A regex which will be used to exclude directories from commands.
-    -i, --include <PATTERN>      A regex which will be used to include directories from commands. Overrides
-                                 excludes so if a directory is matched by an exclude pattern and an include
-                                 pattern the directory will be included.
-
-SUBCOMMANDS:
-    help    Prints this message or the help of the given subcommand(s)
-    list
-    run
+Options:
+  -e, --excludes <EXCLUDES>  
+  -i, --includes <INCLUDES>  
+  -v, --verbose              
+  -c, --code-dir <CODE_DIR>  
+  -h, --help                 Print help
+  -V, --version              Print version
 ```
 
 ### Definitions
