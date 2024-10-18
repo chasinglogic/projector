@@ -12,11 +12,11 @@ version = "1.0.1"
 edition = "2021"
 
 [dependencies]
-clap = { version = "4.3.21", features = ["derive"] }
+clap = { version = "4.5.20", features = ["derive"] }
 dirs = "5.0.1"
-regex = "1.9.3"
-serde = { version = "1.0.183", features = ["derive"] }
-serde_yaml = "0.9.25"
+regex = "1.11.0"
+serde = { version = "1.0.210", features = ["derive"] }
+serde_yaml = "0.9.34"
 
 [profile.release]
 lto = true
