@@ -135,7 +135,11 @@ fn main() {
             .collect();
         c
     } else {
-        Config::from(format!("{}/Code", homedir_s))
+        Config::from(if let Ok(val) = std::env::var("CODE_DIR") {
+            val
+        } else {
+            format!("{}/Code", homedir_s)
+        })
     };
 
     if matches.excludes.len() > 0 {
