@@ -7,6 +7,10 @@ enormous git repos folder. Projector can be viewed as a "no setup" required
 version of [mr (myrepos)](https://myrepos.branchable.com/). But a bit more
 flexible than that.
 
+- [Installation](#installation)
+- [Commands](#commands)
+- [Configuration](#configuration)
+
 ## Installation
 
 You can install projector from crates.io via cargo:
@@ -49,41 +53,20 @@ Options:
 
 Projector considers any git repo as a "project". In future versions I will
 expand this definition but it works for me now so that's the way it is.
-Additionally, projector operates off of the assumption that you have all of your
-code / projects under one directory. For myself I use `~/Code`.
 
-Projector has two functions: `list` and `run`. 
+## Commands
 
 ### List
 
-`list` will literally print a list of the projects under your code directory. 
+List will literally print a list of the projects under your code directories. 
 
-You may be wondering, what would I use this for? The answer is quickly moving
-around!
+List is useful for scripting purposes and with the `--dirty` flag for clocking
+out for the day. I use `projector list --dirty` at the end of my coding sessions
+so I can find any git repositories I've touched by not committed my work on.
 
-You can create a bash function in your bashrc like this:
-
-```
-function sp() {
-    cd $(projector list | grep -i $1)
-}
-```
-
-Now if you source your bashrc and type `sp $name_of_a_project` you will
-instantly be transported to your project directory. For example:
-
-```
-Users/chasinglogic λ . .bashrc
-Users/chasinglogic λ sp projector
-Code/projector master λ sp dfm
-chasinglogic/dfm master λ pwd
-/Users/chasinglogic/Code/go/src/github.com/chasinglogic/dfm
-chasinglogic/dfm master λ
-```
-
-Optionally, if you have another tool I'm fond of called
+If you have another tool I'm fond of called
 [FZF](https://github.com/junegunn/fzf) you can take this a step further and make
-a fuzzy searchable list of your projects:
+a fuzzy selector for your projects in scripts:
 
 ```
 function sp() {
@@ -164,6 +147,55 @@ Code/projector master λ pwd
 Code/projector master λ
 ```
 
+### Find
+
+Find searches your project list for the given regex and returns the project who
+has the rightmost match of that search.
+
+For example let's say you have 4 projects:
+
+```
+/Users/mathewrobinson/Code/cdb
+/Users/mathewrobinson/Code/homelab
+/Users/mathewrobinson/Code/taskforge
+/Users/mathewrobinson/Code/taskforge.old
+```
+
+If we run `projector find taskforge` here we will get
+`/Users/mathewrobinson/Code/taskforge` because in that case the match of
+`taskforge` is literally at the end (i.e. rightmost). If we instead wanted to
+find `/Users/mathewrobinson/Code/taskforge.old` we could run `projector find
+--reverse taskforge` which will find the leftmost match instead.
+
+This can lead to really handy project switching shell functions such as the one
+I have:
+
+```bash
+function sp() {
+    cd $(projector find "$1")
+}
+```
+
+Because find fully supports regex as provided by the regex crate you can also
+make this case insensitive:
+
+```bash
+function sp() {
+    cd $(projector find "(?i)$1")
+}
+```
+
+Now if you source your bashrc and type `sp $name_of_a_project` you will
+instantly be transported to your project directory. For example:
+
+```
+Users/chasinglogic λ . .bashrc
+Users/chasinglogic λ sp projector
+Code/projector master λ sp dfm
+chasinglogic/dfm master λ pwd
+/Users/chasinglogic/Code/go/src/github.com/chasinglogic/dfm
+chasinglogic/dfm master λ
+```
 ### Run
 
 Run allows you to run shell commands in all of your projects. For example if you
@@ -203,17 +235,53 @@ Code/projector master λ
 ```
 
 Any flags you pass after the program will get passed to the program so you can
-type the command just like you would normally, no weird shell quoting!
+type the command just like you would normally, no weird shell quoting! (ok maybe
+just the regular amount of weird shell quoting.)
 
 
-### Some Setup (Optionally) Required
+## Configuration
 
 Projector does not require any setup to use provided that you either have your
 code in `~/Code` or set the `$CODE_DIR` environment variable. However every
 good CLI does provide some configuration for power users, so of course
-projector does as well. Primarily the configuration centers around inclusion
-and exclusion of project directories. For example I have a huge amount of go
-repos in my `$GOPATH`:
+projector does as well. 
+
+The config file should be located in `$HOME/.projector.yml` and can contain
+3 keys: `code_dirs`, `excludes`, and `includes`. Here is my config file as an
+example:
+
+```yaml
+code_dirs:
+  - ~/Code
+  - ~/Work
+  - ~/kde/src
+  - ~/.config/dfm/profiles
+
+excludes:
+  - go/pkg
+  - go/src
+
+includes:
+  - go/src/github\.com/chasinglogic
+```
+
+`code_dirs` allows you to specify more than one root directory for projector to
+search.
+
+`excludes` is a list of regex patterns that if matched will cause a directory to
+be excluded from the projects list and not searched further.
+
+`includes` is a list of regex patterns that overrides an exclude. So if an
+exclude pattern and an include pattern match a directory it will be searched or
+included in the project list.
+
+All keys besides `code_dirs` are optional so you can omit any which you do not want to
+configure.
+
+### Configuration Example
+
+Primarily the configuration centers around inclusion and exclusion of project
+directories. For example I have a huge amount of go repos in my `$GOPATH`:
 
 ```
 /Users/mathewrobinson/Code/go/src/github.com/goreleaser/nfpm
@@ -262,7 +330,8 @@ create a config file at `~/.projector.yml` that looks like this:
 
 ```yaml
 ---
-code_dir: ~/Code
+code_dirs: 
+    - ~/Code
 includes:
     - .*github.com/chasinglogic.*
     - .*github.com/mongodb.*
