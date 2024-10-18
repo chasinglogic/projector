@@ -17,7 +17,6 @@ dirs = "5.0.1"
 regex = "1.9.3"
 serde = { version = "1.0.183", features = ["derive"] }
 serde_yaml = "0.9.25"
-walkdir = "2.3.3"
 
 [profile.release]
 lto = true

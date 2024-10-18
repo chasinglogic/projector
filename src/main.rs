@@ -15,7 +15,8 @@ use clap::{Parser, Subcommand};
 use dirs::home_dir;
 
 use commands::find;
-use find::projects::{Config, Finder};
+use find::config::Config;
+use find::projects::Finder;
 
 fn list(finder: Finder) {
     for project in finder {
