@@ -4,6 +4,7 @@ use std::path::PathBuf;
 use std::process;
 
 use super::config::Config;
+use super::git::repo_is_dirty;
 
 // Combine multiple regex strings into a single regex that logical
 // "or"s the given regex patterns together.
@@ -101,6 +102,10 @@ impl Iterator for Finder {
                     let mut git_path = path.clone();
                     git_path.push(".git");
                     if let Ok(true) = git_path.try_exists() {
+                        if self.dirty_only && !repo_is_dirty(&path) {
+                            continue;
+                        }
+
                         self.matches.push(path);
                     } else {
                         new_candidates.push(path);
