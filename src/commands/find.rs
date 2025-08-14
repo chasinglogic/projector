@@ -1,4 +1,4 @@
-use std::cmp::Ordering;
+use std::{cmp::Ordering, process::exit};
 
 use crate::find::projects::Finder;
 
@@ -74,7 +74,7 @@ pub fn find(finder: Finder, search_term: String, reverse: bool, verbose: bool) {
 
     if matched_projects.is_empty() {
         println!("No projects matched that search.");
-        return;
+        exit(10);
     }
 
     if verbose {
