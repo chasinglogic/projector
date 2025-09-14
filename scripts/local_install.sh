@@ -9,10 +9,10 @@ REPO=$(git rev-parse --show-toplevel)
 
 cd "$REPO" || exit 1
 
-cargo build --release
+go build .
 
 if [[ -x $(which strip) ]]; then
-    strip ./target/release/projector
+    strip ./projector
 fi
 
-mv ./target/release/projector "$INSTALL_DIR/"
+mv ./projector "$INSTALL_DIR/"
