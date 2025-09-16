@@ -25,6 +25,9 @@
             inherit version;
             src = ./.;
             vendorHash = "sha256-Hg7wmVEgoqbG4LAq6GVhsUaKf47peBrqyz/7K9zxoh0=";
+            # Skip tests because they require a git binary but we don't want to make git
+            # a direct dependency of projector itself.
+            doCheck = false;
           };
         });
 
@@ -35,7 +38,7 @@
         in
         {
           default = pkgs.mkShell {
-            buildInputs = with pkgs; [ go gopls gotools go-tools git ];
+            buildInputs = with pkgs; [ go gopls gotools go-tools ];
           };
         });
 
