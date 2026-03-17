@@ -39,7 +39,7 @@ var findCmd = &cobra.Command{
 		}
 
 		if len(matchedProjects) == 0 {
-			return errors.New("No projects matched that search.")
+			return errors.New("no projects matched that search")
 		}
 
 		if verbose {

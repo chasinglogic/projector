@@ -11,7 +11,9 @@ func TestGetConfig(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create temp home dir: %v", err)
 	}
-	defer os.RemoveAll(homeDir)
+	defer func() {
+		_ = os.RemoveAll(homeDir)
+	}()
 
 	t.Setenv("HOME", homeDir)
 
@@ -49,7 +51,9 @@ func TestGetConfigNoFile(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create temp home dir: %v", err)
 	}
-	defer os.RemoveAll(homeDir)
+	defer func() {
+		_ = os.RemoveAll(homeDir)
+	}()
 
 	t.Setenv("HOME", homeDir)
 	t.Setenv("CODE_DIR", "/tmp/code")
@@ -73,10 +77,14 @@ func TestGetConfigNoFileNoEnv(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create temp home dir: %v", err)
 	}
-	defer os.RemoveAll(homeDir)
+	defer func() {
+		_ = os.RemoveAll(homeDir)
+	}()
 
 	t.Setenv("HOME", homeDir)
-	os.Unsetenv("CODE_DIR")
+	if err := os.Unsetenv("CODE_DIR"); err != nil {
+		t.Fatalf("failed to unset CODE_DIR: %v", err)
+	}
 
 	config, err := GetConfig()
 	if err != nil {
