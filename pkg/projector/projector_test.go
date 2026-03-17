@@ -5,6 +5,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"testing"
+	"time"
 )
 
 func setupTest(t *testing.T) (string, func()) {
@@ -52,7 +53,7 @@ func setupTest(t *testing.T) (string, func()) {
 	}
 
 	return tempDir, func() {
-		os.RemoveAll(tempDir)
+		_ = os.RemoveAll(tempDir)
 	}
 }
 
@@ -148,5 +149,51 @@ func TestFinderFindWithIncludes(t *testing.T) {
 	expected := filepath.Join(tempDir, "dirty-git-repo")
 	if matches[0] != expected {
 		t.Errorf("expected match %s, got %s", expected, matches[0])
+	}
+}
+
+func TestIsDirtyWithMtimeChange(t *testing.T) {
+	tempDir, err := os.MkdirTemp("", "projector-mtime-test")
+	if err != nil {
+		t.Fatalf("failed to create temp dir: %v", err)
+	}
+	defer func() {
+		_ = os.RemoveAll(tempDir)
+	}()
+
+	// Create a clean git repository
+	gitDir := filepath.Join(tempDir, "git-repo")
+	if err := os.Mkdir(gitDir, 0755); err != nil {
+		t.Fatalf("failed to create git repo dir: %v", err)
+	}
+	cmd := exec.Command("git", "init")
+	cmd.Dir = gitDir
+	if err := cmd.Run(); err != nil {
+		t.Fatalf("failed to init git repo: %v", err)
+	}
+	cleanFile := filepath.Join(gitDir, "clean-file.txt")
+	if err := os.WriteFile(cleanFile, []byte("clean"), 0644); err != nil {
+		t.Fatalf("failed to create clean file: %v", err)
+	}
+	cmd = exec.Command("git", "add", "clean-file.txt")
+	cmd.Dir = gitDir
+	if err := cmd.Run(); err != nil {
+		t.Fatalf("failed to add clean file: %v", err)
+	}
+	cmd = exec.Command("git", "commit", "-m", "initial commit")
+	cmd.Dir = gitDir
+	if err := cmd.Run(); err != nil {
+		t.Fatalf("failed to create initial commit: %v", err)
+	}
+
+	// Intentionally bump the mtime to simulate the bug scenario
+	now := time.Now().Add(10 * time.Second)
+	if err := os.Chtimes(cleanFile, now, now); err != nil {
+		t.Fatalf("failed to change mtime: %v", err)
+	}
+
+	// The repository should NOT be considered dirty
+	if isDirty(gitDir) {
+		t.Errorf("expected clean repository, but it was flagged as dirty due to mtime change")
 	}
 }

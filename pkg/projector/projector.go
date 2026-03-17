@@ -5,6 +5,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"strings"
 )
 
 type Finder struct {
@@ -79,20 +80,8 @@ func (f *Finder) isIncluded(path string) bool {
 }
 
 func isDirty(path string) bool {
-	return hasUncommittedChanges(path) || hasUntrackedFiles(path)
-}
-
-func hasUncommittedChanges(path string) bool {
-	cmd := exec.Command("git", "diff-index", "--quiet", "HEAD", "--")
+	cmd := exec.Command("git", "status", "--porcelain")
 	cmd.Dir = path
-	err := cmd.Run()
-	return err != nil
-}
-
-func hasUntrackedFiles(path string) bool {
-	cmd := exec.Command("git", "ls-files", "--exclude-standard", "--others")
-	cmd.Dir = path
-	// ignore the error because we wanna return false anyways if there is one
 	output, _ := cmd.Output()
-	return len(output) > 0
+	return len(strings.TrimSpace(string(output))) > 0
 }
