@@ -66,8 +66,8 @@ func getBestCandidate(matchedProjects []string, reverse bool, rgx *regexp.Regexp
 	sort.Slice(matchedProjects, func(i, j int) bool {
 		a := matchedProjects[i]
 		b := matchedProjects[j]
-		matchA := float64(rgx.FindStringIndex(a)[1]) / float64(len(a))
-		matchB := float64(rgx.FindStringIndex(b)[1]) / float64(len(b))
+		matchA := matchPosition(a, reverse, rgx)
+		matchB := matchPosition(b, reverse, rgx)
 
 		if matchA == matchB {
 			return len(a) < len(b)
@@ -81,6 +81,22 @@ func getBestCandidate(matchedProjects []string, reverse bool, rgx *regexp.Regexp
 	}
 
 	return matchedProjects[len(matchedProjects)-1]
+}
+
+func matchPosition(path string, reverse bool, rgx *regexp.Regexp) float64 {
+	matches := rgx.FindAllStringIndex(path, -1)
+	if len(matches) == 0 {
+		return 0
+	}
+
+	var pos int
+	if reverse {
+		pos = matches[0][1]
+	} else {
+		pos = matches[len(matches)-1][1]
+	}
+
+	return float64(pos) / float64(len(path))
 }
 
 var reverse bool
