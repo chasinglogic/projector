@@ -1,3 +1,5 @@
 /result
 /target/
 **/*.rs.bk
+# Added by goreleaser init:
+dist/
