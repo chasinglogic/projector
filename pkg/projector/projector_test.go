@@ -26,6 +26,7 @@ func setupTest(t *testing.T) (string, func()) {
 	if err := cmd.Run(); err != nil {
 		t.Fatalf("failed to init git repo: %v", err)
 	}
+	configureGitTestUser(t, gitDir)
 	cmd = exec.Command("git", "commit", "--allow-empty", "-m", "initial commit")
 	cmd.Dir = gitDir
 	if err := cmd.Run(); err != nil {
@@ -54,6 +55,22 @@ func setupTest(t *testing.T) (string, func()) {
 
 	return tempDir, func() {
 		_ = os.RemoveAll(tempDir)
+	}
+}
+
+func configureGitTestUser(t *testing.T, dir string) {
+	t.Helper()
+
+	cmd := exec.Command("git", "config", "user.email", "projector-test@example.com")
+	cmd.Dir = dir
+	if err := cmd.Run(); err != nil {
+		t.Fatalf("failed to configure git user email: %v", err)
+	}
+
+	cmd = exec.Command("git", "config", "user.name", "Projector Test")
+	cmd.Dir = dir
+	if err := cmd.Run(); err != nil {
+		t.Fatalf("failed to configure git user name: %v", err)
 	}
 }
 
@@ -171,6 +188,7 @@ func TestIsDirtyWithMtimeChange(t *testing.T) {
 	if err := cmd.Run(); err != nil {
 		t.Fatalf("failed to init git repo: %v", err)
 	}
+	configureGitTestUser(t, gitDir)
 	cleanFile := filepath.Join(gitDir, "clean-file.txt")
 	if err := os.WriteFile(cleanFile, []byte("clean"), 0644); err != nil {
 		t.Fatalf("failed to create clean file: %v", err)
